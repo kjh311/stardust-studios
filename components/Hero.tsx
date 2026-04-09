@@ -4,13 +4,16 @@ import { motion } from "framer-motion";
 import { Sparkles } from "lucide-react";
 
 const FILM_STRIP = [
-  { id: 1, title: "Outer Space", image: "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?q=80&w=400&auto=format&fit=crop" },
-  { id: 2, title: "Magic Forest", image: "https://images.unsplash.com/photo-1462331940025-496dfbfc7564?q=80&w=400&auto=format&fit=crop" },
-  { id: 3, title: "Lost Jungle", image: "https://images.unsplash.com/photo-1534796636912-3b95b3ab5986?q=80&w=400&auto=format&fit=crop" },
-  { id: 4, title: "Deep Sea", image: "https://images.unsplash.com/photo-1551244072-5d12893278ab?q=80&w=400&auto=format&fit=crop" },
+  { id: 1, title: "Outer Space", image: "/assets/space.png" },
+  { id: 2, title: "Magic Forest", image: "/assets/forest.png" },
+  { id: 3, title: "Lost Jungle", image: "/assets/jungle.png" },
+  { id: 4, title: "Infinite Sea", image: "/assets/space.png" }, // Reusing space for variety in marquee
 ];
 
 export default function Hero() {
+  // Duplicate images for infinite scroll
+  const marqueeItems = [...FILM_STRIP, ...FILM_STRIP];
+
   return (
     <section className="relative pt-32 pb-16 flex flex-col items-center justify-center overflow-hidden px-4 md:px-8">
       {/* Ambient Glows */}
@@ -49,28 +52,40 @@ export default function Hero() {
         </motion.div>
       </div>
 
-      {/* Film Strip Gallery */}
-      <motion.div 
-        initial={{ opacity: 0, x: 100 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 1.5, delay: 0.8 }}
-        className="mt-24 w-full overflow-hidden flex justify-center"
-      >
-        <div className="flex gap-4 px-8 overflow-x-auto no-scrollbar pb-8">
-          {FILM_STRIP.map((item) => (
-            <div key={item.id} className="flex-shrink-0 w-64 md:w-80 aspect-[16/9] rounded-md overflow-hidden glass-sheen group">
+      {/* Infinite Scrolling Film Strip */}
+      <div className="mt-24 w-full overflow-hidden relative group">
+        <motion.div 
+          className="flex gap-4 w-max"
+          animate={{
+            x: ["0%", "-50%"],
+          }}
+          transition={{
+            x: {
+              repeat: Infinity,
+              repeatType: "loop",
+              duration: 20,
+              ease: "linear",
+            },
+          }}
+        >
+          {marqueeItems.map((item, index) => (
+            <div key={`${item.id}-${index}`} className="flex-shrink-0 w-64 md:w-96 aspect-[16/9] rounded-md overflow-hidden glass-sheen relative group/item">
               <img 
                 src={item.image} 
                 alt={item.title} 
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                className="w-full h-full object-cover transition-transform duration-500 group-hover/item:scale-105"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-surface/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
+              <div className="absolute inset-0 bg-gradient-to-t from-surface/80 to-transparent opacity-0 group-hover/item:opacity-100 transition-opacity flex items-end p-6">
                 <span className="text-on-surface font-manrope font-bold text-xs uppercase tracking-widest">{item.title}</span>
               </div>
             </div>
           ))}
-        </div>
-      </motion.div>
+        </motion.div>
+        
+        {/* Gradient Fades for Marquee */}
+        <div className="absolute inset-y-0 left-0 w-32 bg-gradient-to-r from-surface to-transparent z-10" />
+        <div className="absolute inset-y-0 right-0 w-32 bg-gradient-to-l from-surface to-transparent z-10" />
+      </div>
     </section>
   );
 }

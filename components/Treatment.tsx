@@ -22,7 +22,7 @@ export default function Treatment() {
           className="relative w-full max-w-4xl aspect-video rounded-md overflow-hidden glass-sheen"
         >
           <img 
-            src="https://images.unsplash.com/photo-1626814026160-2237a95fc5a0?q=80&w=1200&auto=format&fit=crop" 
+            src="/assets/profile.png" 
             alt="Pixar Style Character" 
             className="w-full h-full object-cover"
           />

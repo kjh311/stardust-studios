@@ -7,19 +7,19 @@ const ADVENTURES = [
     title: "The Space Explorer",
     category: "Sci-Fi / Episode 01",
     description: "Launch into the infinite void. A story where stars are more than light—they are memories waiting to be explored.",
-    image: "https://images.unsplash.com/photo-1614728263952-84ea256f9679?q=80&w=800&auto=format&fit=crop",
+    image: "/assets/space.png",
   },
   {
     title: "The Enchanted Kingdom",
     category: "Fantasy / Short Film",
     description: "Deep within the lavender forest, ancient magic stirs. Every leaf has a secret, and every shadow tells a story.",
-    image: "https://images.unsplash.com/photo-1466611653911-954ff214af91?q=80&w=800&auto=format&fit=crop",
+    image: "/assets/forest.png",
   },
   {
     title: "The Wild Discovery",
     category: "Nature / Adventure",
     description: "Uncover the heart of the untouched jungle. Witness the raw beauty of a world that has never seen a human step.",
-    image: "https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?q=80&w=800&auto=format&fit=crop",
+    image: "/assets/jungle.png",
   },
 ];
 
