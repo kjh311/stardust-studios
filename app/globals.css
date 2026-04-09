@@ -1,26 +1,87 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  --color-primary: #ffd79b;
+  --color-primary-container: #ffb300;
+  --color-secondary: #edb1ff;
+  --color-secondary-container: #6e208c;
+  
+  --color-background-start: #0b0e14;
+  --color-background-end: #1a1f2c;
+  
+  --color-surface: #10131a;
+  --color-surface-bright: #363940;
+  --color-surface-dim: #10131a;
+  --color-surface-variant: #32353c;
+  
+  --color-surface-container-lowest: #0b0e14;
+  --color-surface-container-low: #191c22;
+  --color-surface-container: #1d2026;
+  --color-surface-container-high: #272a31;
+  --color-surface-container-highest: #32353c;
+
+  --color-on-surface: #e1e2eb;
+  --color-on-surface-variant: #d6c4ac;
+  
+  --font-epilogue: "var(--font-epilogue)", ui-sans-serif, system-ui;
+  --font-manrope: "var(--font-manrope)", ui-sans-serif, system-ui;
+
+  --radius-md: 1.5rem;
+  --radius-full: 9999px;
+  
+  --spacing-section: 160px;
+  --spacing-component: 32px;
+  --spacing-inner: 24px;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-surface text-on-surface font-manrope selection:bg-primary/30;
+    background: radial-gradient(circle at center, var(--color-background-end), var(--color-background-start));
+    min-height: 100vh;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-epilogue tracking-tight;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer utilities {
+  .ambient-glow-primary {
+    filter: blur(30px);
+    background: radial-gradient(circle, var(--color-primary), transparent 70%);
+    opacity: 0.08;
+  }
+
+  .ambient-glow-secondary {
+    filter: blur(30px);
+    background: radial-gradient(circle, var(--color-secondary), transparent 70%);
+    opacity: 0.08;
+  }
+
+  .glass {
+    @apply bg-surface-variant/40 backdrop-blur-xl border border-on-surface-variant/15;
+  }
+
+  .glass-sheen {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .glass-sheen::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      135deg,
+      transparent 0%,
+      rgba(255, 215, 155, 0.05) 50%,
+      transparent 100%
+    );
+    pointer-events: none;
+  }
 }
