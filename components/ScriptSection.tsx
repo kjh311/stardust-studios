@@ -9,6 +9,7 @@ import { toast } from "sonner";
 export default function ScriptSection() {
   const [isValidating, setIsValidating] = useState(false);
   const [validationSuccess, setValidationSuccess] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleUploadClick = () => {
@@ -21,6 +22,7 @@ export default function ScriptSection() {
 
     setIsValidating(true);
     setValidationSuccess(false);
+    setValidationError(null);
 
     try {
       const result = await validateHeroImage(file);
@@ -30,10 +32,10 @@ export default function ScriptSection() {
         toast.success("Hero photo validated! Ready for processing.");
         console.log("Validated Photo File:", file);
       } else {
-        toast.error(result.error || "Validation failed");
+        setValidationError(result.error || "Validation failed");
       }
     } catch (err) {
-      toast.error("Could not process image. Please try another one.");
+      setValidationError("Could not process image. Please try another one.");
       console.error(err);
     } finally {
       setIsValidating(false);
@@ -115,6 +117,23 @@ export default function ScriptSection() {
             </AnimatePresence>
           </motion.div>
           
+          {/* In-line Error Display */}
+          <AnimatePresence>
+            {validationError && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="mt-4 p-4 bg-error/10 border border-error/20 rounded-lg flex items-start gap-3"
+              >
+                <AlertCircle className="w-5 h-5 text-error shrink-0 mt-0.5" />
+                <p className="text-sm font-medium text-error/90 leading-tight">
+                  {validationError}
+                </p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {/* Floating preview element - scaled down for dashboard */}
           <motion.div 
             initial={{ rotate: 12 }}
