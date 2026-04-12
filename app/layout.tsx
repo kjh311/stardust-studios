@@ -20,6 +20,7 @@ export const metadata: Metadata = {
 };
 
 import { createClient } from "@/utils/supabase/server";
+import { Toaster } from "sonner";
 import Navbar from "@/components/Navbar";
 
 export default async function RootLayout({
@@ -32,7 +33,8 @@ export default async function RootLayout({
 
   return (
     <html lang="en" className={`${epilogue.variable} ${manrope.variable}`}>
-      <body className="antialiased">
+      <body className="antialiased selection:bg-primary/30">
+        <Toaster theme="dark" position="top-center" expand={true} richColors />
         <Navbar user={user} />
         {children}
       </body>
