@@ -84,5 +84,71 @@ export async function validateHeroImage(file: File): Promise<ValidationResult> {
     };
   }
 
+  // 4. Sharpness Check (Laplacian Variance)
+  const canvas = document.createElement('canvas');
+  canvas.width = imgElement.width;
+  canvas.height = imgElement.height;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return { isValid: true, confidence }; // Fallback
+
+  ctx.drawImage(imgElement, 0, 0);
+  const sharpness = calculateSharpness(ctx, canvas.width, canvas.height);
+  
+  console.log(`[Vision Debug] Face Confidence: ${confidence.toFixed(2)} | Sharpness Score: ${sharpness.toFixed(2)}`);
+
+  const SHARPNESS_THRESHOLD = 50;
+  if (sharpness < SHARPNESS_THRESHOLD) {
+    return {
+      isValid: false,
+      error: 'Image is too blurry for AI processing. Please provide a sharper photo.'
+    };
+  }
+
   return { isValid: true, confidence };
+}
+
+/**
+ * Calculates the variance of the Laplacian of the image.
+ * A higher value indicates more sharp edges and less blur.
+ */
+function calculateSharpness(ctx: CanvasRenderingContext2D, width: number, height: number): number {
+  const imageData = ctx.getImageData(0, 0, width, height);
+  const data = imageData.data;
+  
+  // 1. Grayscale conversion and Laplacian Convolution
+  // We'll use a 3x3 kernel: [[0, 1, 0], [1, -4, 1], [0, 1, 0]]
+  const laplacianData = new Float32Array(width * height);
+  
+  for (let y = 1; y < height - 1; y++) {
+    for (let x = 1; x < width - 1; x++) {
+      const idx = (y * width + x) * 4;
+      
+      // Get grayscale values of neighbors (R+G+B / 3)
+      const getGrayscale = (px: number, py: number) => {
+        const i = (py * width + px) * 4;
+        return (data[i] + data[i + 1] + data[i + 2]) / 3;
+      };
+
+      const val = 
+        getGrayscale(x, y - 1) + 
+        getGrayscale(x - 1, y) - 4 * getGrayscale(x, y) + getGrayscale(x + 1, y) + 
+        getGrayscale(x, y + 1);
+      
+      laplacianData[y * width + x] = val;
+    }
+  }
+
+  // 2. Calculate Variance of the Laplacian values
+  let sum = 0;
+  for (let i = 0; i < laplacianData.length; i++) {
+    sum += laplacianData[i];
+  }
+  const mean = sum / laplacianData.length;
+
+  let varianceSum = 0;
+  for (let i = 0; i < laplacianData.length; i++) {
+    varianceSum += Math.pow(laplacianData[i] - mean, 2);
+  }
+
+  return varianceSum / laplacianData.length;
 }
