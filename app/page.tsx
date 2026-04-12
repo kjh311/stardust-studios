@@ -8,39 +8,33 @@ import Testimonials from "@/components/Testimonials";
 export default function Home() {
   return (
     <main className="min-h-screen bg-surface selection:bg-primary/30">
-      {/* TopNavBar */}
-      <nav className="fixed top-0 w-full z-50 bg-transparent backdrop-blur-xl">
-        <div className="flex justify-between items-center px-8 py-6 max-w-screen-2xl mx-auto font-headline tracking-tight">
-          <div className="text-2xl font-bold tracking-tighter text-amber-200">Stardust Studios</div>
-          <div className="hidden md:flex gap-8">
-            <a className="text-slate-400 font-medium hover:text-slate-200 hover:scale-105 transition-transform duration-300" href="#">Trailers</a>
-            <a className="text-slate-400 font-medium hover:text-slate-200 hover:scale-105 transition-transform duration-300" href="#">Stories</a>
-            <a className="text-slate-400 font-medium hover:text-slate-200 hover:scale-105 transition-transform duration-300" href="#">Features</a>
-            <a className="text-slate-400 font-medium hover:text-slate-200 hover:scale-105 transition-transform duration-300" href="#">Social</a>
-          </div>
-          <button className="bg-primary text-on-primary px-6 py-2.5 rounded-lg font-bold hover:scale-95 duration-200 transition-transform">
-            Create Now
-          </button>
-        </div>
-      </nav>
-
       {/* Hero Section */}
-      <Hero />
+      <div id="hero">
+        <Hero />
+      </div>
 
       {/* Trailer/Treatment Section */}
-      <Treatment />
+      <div id="trailers">
+        <Treatment />
+      </div>
 
       {/* Adventures Section */}
-      <Adventure />
+      <div id="stories">
+        <Adventure />
+      </div>
 
       {/* Why Section / Feature Grid */}
-      <FeatureGrid />
+      <div id="features">
+        <FeatureGrid />
+      </div>
 
       {/* Personalization Section */}
       <ScriptSection />
 
       {/* Social Proof */}
-      <Testimonials />
+      <div id="social">
+        <Testimonials />
+      </div>
 
       {/* Final CTA Section */}
       <section className="py-40 px-8 relative overflow-hidden">

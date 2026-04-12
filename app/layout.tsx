@@ -19,14 +19,21 @@ export const metadata: Metadata = {
   description: "A digital interface transformed into a cinematic experience using the Celestial Narrative design system.",
 };
 
-export default function RootLayout({
+import { createClient } from "@/utils/supabase/server";
+import Navbar from "@/components/Navbar";
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
   return (
     <html lang="en" className={`${epilogue.variable} ${manrope.variable}`}>
       <body className="antialiased">
+        <Navbar user={user} />
         {children}
       </body>
     </html>
