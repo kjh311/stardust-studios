@@ -12,6 +12,7 @@ export default function ScriptSection() {
   const [validationError, setValidationError] = useState<string | null>(null);
   const [processedFile, setProcessedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [heroMetadata, setHeroMetadata] = useState<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleUploadClick = () => {
@@ -32,6 +33,7 @@ export default function ScriptSection() {
     setValidationError(null);
     setProcessedFile(null);
     setPreviewUrl(null);
+    setHeroMetadata(null);
 
     try {
       const result = await validateHeroImage(file);
@@ -40,9 +42,11 @@ export default function ScriptSection() {
         setValidationSuccess(true);
         setProcessedFile(result.processedFile || null);
         setPreviewUrl(result.previewUrl || null);
+        setHeroMetadata(result.metadata || null);
         toast.success("Hero photo optimized! Ready for processing.");
         console.log("Original File:", file);
         console.log("Processed Photo File:", result.processedFile);
+        console.log("Hero Metadata:", result.metadata);
       } else {
         setValidationError(result.error || "Validation failed");
       }
@@ -90,56 +94,73 @@ export default function ScriptSection() {
                 : "border-outline bg-surface-container-high/50"
             }`}
           >
-            <AnimatePresence mode="wait">
-              {isValidating ? (
-                <motion.div
-                  key="validating"
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  className="flex flex-col items-center"
-                >
-                  <Loader2 className="w-12 h-12 text-primary animate-spin mb-6" />
-                  <p className="font-headline text-lg mb-2">Analyzing Hero...</p>
-                  <p className="text-on-surface-variant text-xs italic">Detecting cinematic potential</p>
-                </motion.div>
-              ) : validationSuccess ? (
-                <motion.div
-                  key="success"
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="flex flex-col items-center"
-                >
-                  <CheckCircle2 className="w-12 h-12 text-secondary mb-6" />
-                  <p className="font-headline text-lg mb-2 text-secondary">Ready for Processing</p>
-                  <p className="text-on-surface-variant text-xs">Hero likeness locked in</p>
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="idle"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="flex flex-col items-center"
-                >
-                  <Upload className="w-12 h-12 text-primary mx-auto mb-6 group-hover:scale-110 transition-transform" />
-                  <p className="font-headline text-lg mb-2">Upload Hero Photo</p>
-                  <p className="text-on-surface-variant text-xs">Drag and drop or click to browse</p>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {/* Status Overlay */}
+            <motion.div
+              className="absolute inset-0 z-10 flex flex-col items-center justify-center pointer-events-none p-6 text-center"
+            >
+              <AnimatePresence mode="wait">
+                {isValidating ? (
+                  <motion.div
+                    key="validating"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="flex flex-col items-center"
+                  >
+                    <Loader2 className="w-12 h-12 text-primary animate-spin mb-6" />
+                    <p className="font-headline text-lg mb-2">Analyzing Likeness</p>
+                    <p className="text-on-surface-variant text-xs">Scanning for cinematic potential...</p>
+                  </motion.div>
+                ) : validationSuccess ? (
+                  <motion.div
+                    key="success"
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="flex flex-col items-center"
+                  >
+                    <CheckCircle2 className="w-12 h-12 text-secondary mb-6" />
+                    <p className="font-headline text-lg mb-2 text-secondary">Face Optimized</p>
+                    <p className="text-on-surface-variant text-xs">Hero likeness locked in</p>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="idle"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="flex flex-col items-center"
+                  >
+                    <Upload className="w-12 h-12 text-primary mx-auto mb-6 group-hover:scale-110 transition-transform" />
+                    <p className="font-headline text-lg mb-2">Upload Hero Photo</p>
+                    <p className="text-on-surface-variant text-xs">Drag and drop or click to browse</p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
           </motion.div>
           
-          {/* In-line Error Display */}
+          {/* In-line Error/Tip Display */}
           <AnimatePresence>
             {validationError && (
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="mt-4 p-4 bg-error/10 border border-error/20 rounded-lg flex items-start gap-3"
+                className={`mt-4 p-4 border rounded-lg flex items-start gap-3 ${
+                  validationError.toLowerCase().includes('hair') 
+                  ? 'bg-secondary/10 border-secondary/20' 
+                  : 'bg-error/10 border-error/20'
+                }`}
               >
-                <AlertCircle className="w-5 h-5 text-error shrink-0 mt-0.5" />
-                <p className="text-sm font-medium text-error/90 leading-tight">
+                <AlertCircle className={`w-5 h-5 shrink-0 mt-0.5 ${
+                  validationError.toLowerCase().includes('hair') 
+                  ? 'text-secondary' 
+                  : 'text-error'
+                }`} />
+                <p className={`text-sm font-medium leading-tight ${
+                  validationError.toLowerCase().includes('hair') 
+                  ? 'text-secondary/90' 
+                  : 'text-error/90'
+                }`}>
                   {validationError}
                 </p>
               </motion.div>

@@ -29,6 +29,11 @@ export interface ValidationResult {
   confidence?: number;
   processedFile?: File;
   previewUrl?: string;
+  metadata?: {
+    sharpness: number;
+    confidence: number;
+    poseRatio: number;
+  };
 }
 
 /**
@@ -53,11 +58,11 @@ export async function validateHeroImage(file: File): Promise<ValidationResult> {
   // 2. Load models
   await loadModels();
 
-  // 3. Detect Face
+  // 3. Detect Face with landmarks
   const detections = await faceapi.detectAllFaces(
     imgElement, 
     new faceapi.TinyFaceDetectorOptions()
-  );
+  ).withFaceLandmarks();
 
   if (detections.length === 0) {
     URL.revokeObjectURL(imgElement.src);
@@ -76,7 +81,7 @@ export async function validateHeroImage(file: File): Promise<ValidationResult> {
   }
 
   const detection = detections[0];
-  const confidence = detection.score;
+  const confidence = detection.detection.score;
   const CONFIDENCE_THRESHOLD = 0.6;
 
   if (confidence < CONFIDENCE_THRESHOLD) {
@@ -87,7 +92,35 @@ export async function validateHeroImage(file: File): Promise<ValidationResult> {
     };
   }
 
-  // 4. Sharpness Check (Laplacian Variance)
+  // 4. Pose Check (Frontal vs Profile)
+  const { isFrontal, ratio: poseRatio } = checkPose(detection.landmarks);
+  if (!isFrontal) {
+    URL.revokeObjectURL(imgElement.src);
+    return {
+      isValid: false,
+      error: 'Please look directly at the camera for the best results. Side profiles are not ready for cinema.'
+    };
+  }
+
+  // 5. Hair Cutoff Check (Eyebrow Proximity to Edge)
+  const faceHeight = detection.detection.box.height;
+  const leftEyebrow = detection.landmarks.getLeftEyeBrow();
+  const rightEyebrow = detection.landmarks.getRightEyeBrow();
+  const topEyebrowY = Math.min(
+    ...leftEyebrow.map((el: faceapi.Point) => el.y), 
+    ...rightEyebrow.map((el: faceapi.Point) => el.y)
+  );
+
+  // If eyebrows are within 10% of the faceHeight from the top edge, suggest there's not enough hair context
+  if (topEyebrowY < faceHeight * 0.15) {
+    URL.revokeObjectURL(imgElement.src);
+    return {
+      isValid: false,
+      error: 'For best results, try a photo where your full hair is visible! High-end AI needs context.'
+    };
+  }
+
+  // 6. Sharpness Check (Laplacian Variance)
   const canvas = document.createElement('canvas');
   canvas.width = imgElement.width;
   canvas.height = imgElement.height;
@@ -100,7 +133,7 @@ export async function validateHeroImage(file: File): Promise<ValidationResult> {
   ctx.drawImage(imgElement, 0, 0);
   const sharpness = calculateSharpness(ctx, canvas.width, canvas.height);
   
-  console.log(`[Vision Debug] Face Confidence: ${confidence.toFixed(2)} | Sharpness Score: ${sharpness.toFixed(2)}`);
+  console.log(`[Vision Debug] Face: ${confidence.toFixed(2)} | Sharpness: ${sharpness.toFixed(2)} | Pose: ${poseRatio.toFixed(2)}`);
 
   const SHARPNESS_THRESHOLD = 50;
   if (sharpness < SHARPNESS_THRESHOLD) {
@@ -111,8 +144,8 @@ export async function validateHeroImage(file: File): Promise<ValidationResult> {
     };
   }
 
-  // 5. Image Processing (Crop, Resize, Compress)
-  const { file: processedFile, url: previewUrl } = await processHeroImage(imgElement, detection.box);
+  // 7. Image Processing (Square Crop, Resize, Compress)
+  const { file: processedFile, url: previewUrl } = await processHeroImage(imgElement, detection.detection.box);
   
   // Clean up original image URL
   URL.revokeObjectURL(imgElement.src);
@@ -121,42 +154,76 @@ export async function validateHeroImage(file: File): Promise<ValidationResult> {
     isValid: true, 
     confidence, 
     processedFile, 
-    previewUrl 
+    previewUrl,
+    metadata: {
+      sharpness,
+      confidence,
+      poseRatio
+    }
   };
 }
 
 /**
- * Crops the image around the face with generous padding for hair and shoulders, 
- * resizes to max 1024px, and compresses as JPEG.
+ * Heuristic pose detection based on horizontal nose tip placement relative to eyes.
+ */
+function checkPose(landmarks: faceapi.FaceLandmarks68): { isFrontal: boolean, ratio: number } {
+  const leftEye = landmarks.getLeftEye()[0];  // Outer corner
+  const rightEye = landmarks.getRightEye()[3]; // Outer corner
+  const noseTip = landmarks.getNose()[3];     // Bottom of nose bridge
+
+  // Calculate where the nose is horizontally relative to eyes
+  const eyeWidth = Math.abs(rightEye.x - leftEye.x);
+  const noseXOffset = noseTip.x - leftEye.x;
+  const ratio = noseXOffset / eyeWidth;
+
+  // Frontal is typically 0.5. Let's allow 0.35 to 0.65 for standard variance.
+  const isFrontal = ratio > 0.35 && ratio < 0.65;
+  
+  return { isFrontal, ratio };
+}
+
+/**
+ * Intelligent 1:1 Square Crop centering on the face area.
+ * Shifts box to maintain 1:1 ratio if near image boundaries.
  */
 async function processHeroImage(img: HTMLImageElement, faceBox: faceapi.Box): Promise<{ file: File, url: string }> {
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Canvas context not available');
 
-  // Generous padding: 50% of face height on top (for hair), 30% on sides/bottom (for shoulders/volume)
-  const padTop = faceBox.height * 0.5;
-  const padBottom = faceBox.height * 0.3;
-  const padSide = faceBox.width * 0.3;
+  // 1. Calculate ideal square side length (Head + Generous Hair/Shoulder context)
+  // Director's requirement: 2.75x height for full cinematic context
+  const baseSide = faceBox.height * 2.75;
 
-  const cropX = Math.max(0, faceBox.x - padSide);
-  const cropY = Math.max(0, faceBox.y - padTop);
-  const cropW = Math.min(img.width - cropX, faceBox.width + 2 * padSide);
-  const cropH = Math.min(img.height - cropY, faceBox.height + padTop + padBottom);
+  // 2. Smart Vertical Bias: Position face in the lower-middle for header room
+  const faceCenterX = faceBox.x + faceBox.width / 2;
+  const faceCenterY = faceBox.y + faceBox.height / 2;
 
-  // Resolution downscaling (max dimension 1024px)
+  // We want the face center to be at roughly 60% from the top of the box
+  let cropX = faceCenterX - baseSide / 2;
+  let cropY = faceCenterY - (baseSide * 0.6);
+  let cropW = baseSide;
+  let cropH = baseSide;
+
+  // 3. Smart Shifting: If square exceeds image bounds, shift it while keeping it square
+  if (cropX < 0) cropX = 0;
+  if (cropY < 0) cropY = 0;
+  if (cropX + cropW > img.width) cropX = img.width - cropW;
+  if (cropY + cropH > img.height) cropY = img.height - cropH;
+
+  // Final emergency clamping (if image is smaller than our square)
+  const finalSide = Math.min(cropW, cropH, img.width, img.height);
+  cropW = finalSide;
+  cropH = finalSide;
+
+  // 4. Resolution downscaling (max dimension 1024px)
   const MAX_DIM = 1024;
-  let targetW = cropW;
-  let targetH = cropH;
+  let targetW = finalSide;
+  let targetH = finalSide;
 
-  if (targetW > MAX_DIM || targetH > MAX_DIM) {
-    if (targetW > targetH) {
-      targetH = (MAX_DIM / targetW) * targetH;
-      targetW = MAX_DIM;
-    } else {
-      targetW = (MAX_DIM / targetH) * targetW;
-      targetH = MAX_DIM;
-    }
+  if (targetW > MAX_DIM) {
+    targetW = MAX_DIM;
+    targetH = MAX_DIM;
   }
 
   canvas.width = targetW;
@@ -173,7 +240,7 @@ async function processHeroImage(img: HTMLImageElement, faceBox: faceapi.Box): Pr
   const processedFile = new File([blob], 'processed-hero.jpg', { type: 'image/jpeg' });
   const previewUrl = URL.createObjectURL(blob);
 
-  console.log(`[Vision Debug] Processed Result: ${cropW.toFixed(0)}x${cropH.toFixed(0)} -> ${targetW.toFixed(0)}x${targetH.toFixed(0)} | Size: ${(blob.size / 1024).toFixed(1)}KB`);
+  console.log(`[Vision Debug] Cinematic Square: ${cropW.toFixed(0)}px (Bias: 60%) -> ${targetW}px | Size: ${(blob.size / 1024).toFixed(1)}KB`);
 
   return { 
     file: processedFile, 
