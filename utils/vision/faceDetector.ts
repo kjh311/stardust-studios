@@ -27,6 +27,8 @@ export interface ValidationResult {
   isValid: boolean;
   error?: string;
   confidence?: number;
+  processedFile?: File;
+  previewUrl?: string;
 }
 
 /**
@@ -57,10 +59,8 @@ export async function validateHeroImage(file: File): Promise<ValidationResult> {
     new faceapi.TinyFaceDetectorOptions()
   );
 
-  // Resolution of URL.createObjectURL to avoid memory leaks
-  URL.revokeObjectURL(imgElement.src);
-
   if (detections.length === 0) {
+    URL.revokeObjectURL(imgElement.src);
     return { 
       isValid: false, 
       error: 'No face detected. Please ensure your child is clearly visible in the photo.' 
@@ -68,16 +68,19 @@ export async function validateHeroImage(file: File): Promise<ValidationResult> {
   }
 
   if (detections.length > 1) {
+    URL.revokeObjectURL(imgElement.src);
     return { 
       isValid: false, 
       error: 'Multiple faces detected. Please ensure only one person is in the photo.' 
     };
   }
 
-  const confidence = detections[0].score;
+  const detection = detections[0];
+  const confidence = detection.score;
   const CONFIDENCE_THRESHOLD = 0.6;
 
   if (confidence < CONFIDENCE_THRESHOLD) {
+    URL.revokeObjectURL(imgElement.src);
     return { 
       isValid: false, 
       error: 'Photo is too blurry or dark. Please try a clearer shot with better lighting.' 
@@ -89,7 +92,10 @@ export async function validateHeroImage(file: File): Promise<ValidationResult> {
   canvas.width = imgElement.width;
   canvas.height = imgElement.height;
   const ctx = canvas.getContext('2d');
-  if (!ctx) return { isValid: true, confidence }; // Fallback
+  if (!ctx) {
+    URL.revokeObjectURL(imgElement.src);
+    return { isValid: true, confidence };
+  }
 
   ctx.drawImage(imgElement, 0, 0);
   const sharpness = calculateSharpness(ctx, canvas.width, canvas.height);
@@ -98,13 +104,81 @@ export async function validateHeroImage(file: File): Promise<ValidationResult> {
 
   const SHARPNESS_THRESHOLD = 50;
   if (sharpness < SHARPNESS_THRESHOLD) {
+    URL.revokeObjectURL(imgElement.src);
     return {
       isValid: false,
       error: 'Image is too blurry for AI processing. Please provide a sharper photo.'
     };
   }
 
-  return { isValid: true, confidence };
+  // 5. Image Processing (Crop, Resize, Compress)
+  const { file: processedFile, url: previewUrl } = await processHeroImage(imgElement, detection.box);
+  
+  // Clean up original image URL
+  URL.revokeObjectURL(imgElement.src);
+
+  return { 
+    isValid: true, 
+    confidence, 
+    processedFile, 
+    previewUrl 
+  };
+}
+
+/**
+ * Crops the image around the face with generous padding for hair and shoulders, 
+ * resizes to max 1024px, and compresses as JPEG.
+ */
+async function processHeroImage(img: HTMLImageElement, faceBox: faceapi.Box): Promise<{ file: File, url: string }> {
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('Canvas context not available');
+
+  // Generous padding: 50% of face height on top (for hair), 30% on sides/bottom (for shoulders/volume)
+  const padTop = faceBox.height * 0.5;
+  const padBottom = faceBox.height * 0.3;
+  const padSide = faceBox.width * 0.3;
+
+  const cropX = Math.max(0, faceBox.x - padSide);
+  const cropY = Math.max(0, faceBox.y - padTop);
+  const cropW = Math.min(img.width - cropX, faceBox.width + 2 * padSide);
+  const cropH = Math.min(img.height - cropY, faceBox.height + padTop + padBottom);
+
+  // Resolution downscaling (max dimension 1024px)
+  const MAX_DIM = 1024;
+  let targetW = cropW;
+  let targetH = cropH;
+
+  if (targetW > MAX_DIM || targetH > MAX_DIM) {
+    if (targetW > targetH) {
+      targetH = (MAX_DIM / targetW) * targetH;
+      targetW = MAX_DIM;
+    } else {
+      targetW = (MAX_DIM / targetH) * targetW;
+      targetH = MAX_DIM;
+    }
+  }
+
+  canvas.width = targetW;
+  canvas.height = targetH;
+
+  // Draw crop with interpolation
+  ctx.drawImage(img, cropX, cropY, cropW, cropH, 0, 0, targetW, targetH);
+
+  // Compress to JPEG 0.8
+  const blob = await new Promise<Blob>((resolve) => {
+    canvas.toBlob((b) => resolve(b!), 'image/jpeg', 0.8);
+  });
+
+  const processedFile = new File([blob], 'processed-hero.jpg', { type: 'image/jpeg' });
+  const previewUrl = URL.createObjectURL(blob);
+
+  console.log(`[Vision Debug] Processed Result: ${cropW.toFixed(0)}x${cropH.toFixed(0)} -> ${targetW.toFixed(0)}x${targetH.toFixed(0)} | Size: ${(blob.size / 1024).toFixed(1)}KB`);
+
+  return { 
+    file: processedFile, 
+    url: previewUrl 
+  };
 }
 
 /**

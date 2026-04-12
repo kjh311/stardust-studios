@@ -10,6 +10,8 @@ export default function ScriptSection() {
   const [isValidating, setIsValidating] = useState(false);
   const [validationSuccess, setValidationSuccess] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [processedFile, setProcessedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleUploadClick = () => {
@@ -20,17 +22,27 @@ export default function ScriptSection() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Reset states and cleanup previous preview URL
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+    }
+    
     setIsValidating(true);
     setValidationSuccess(false);
     setValidationError(null);
+    setProcessedFile(null);
+    setPreviewUrl(null);
 
     try {
       const result = await validateHeroImage(file);
       
       if (result.isValid) {
         setValidationSuccess(true);
-        toast.success("Hero photo validated! Ready for processing.");
-        console.log("Validated Photo File:", file);
+        setProcessedFile(result.processedFile || null);
+        setPreviewUrl(result.previewUrl || null);
+        toast.success("Hero photo optimized! Ready for processing.");
+        console.log("Original File:", file);
+        console.log("Processed Photo File:", result.processedFile);
       } else {
         setValidationError(result.error || "Validation failed");
       }
@@ -142,9 +154,9 @@ export default function ScriptSection() {
           >
             <div className="relative w-full h-full overflow-hidden rounded-md">
               <img 
-                className={`w-full h-full object-cover transition-all duration-500 ${isValidating ? 'scale-110 blur-sm' : ''}`} 
-                src="https://images.unsplash.com/photo-1595152772835-219674b2a8a6?q=80&w=400&auto=format&fit=crop" 
-                alt="Upload Preview Placeholder"
+                className={`w-full h-full object-cover transition-all duration-500 ${(isValidating || !previewUrl) ? 'grayscale border border-white/5 opacity-50' : ''} ${isValidating ? 'scale-110 blur-sm' : ''}`} 
+                src={previewUrl || "https://images.unsplash.com/photo-1595152772835-219674b2a8a6?q=80&w=400&auto=format&fit=crop"} 
+                alt="Upload Preview"
               />
               <div className="absolute inset-x-0 bottom-2 text-center pointer-events-none">
                 <span className={`px-2 py-0.5 rounded uppercase font-bold backdrop-blur-md text-[8px] transition-colors ${
@@ -152,7 +164,7 @@ export default function ScriptSection() {
                   validationSuccess ? 'bg-secondary text-on-secondary' : 
                   'bg-surface-container-highest/60 text-on-surface-variant'
                 }`}>
-                  {isValidating ? 'Analyzing...' : validationSuccess ? 'Verified' : 'Ready'}
+                  {isValidating ? 'Analyzing...' : validationSuccess ? 'Optimized' : 'Ready'}
                 </span>
               </div>
             </div>
