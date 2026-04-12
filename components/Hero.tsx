@@ -1,13 +1,12 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Sparkles } from "lucide-react";
 
 const FILM_STRIP = [
   { id: 1, title: "Outer Space", image: "/assets/space.png" },
   { id: 2, title: "Magic Forest", image: "/assets/forest.png" },
   { id: 3, title: "Lost Jungle", image: "/assets/jungle.png" },
-  { id: 4, title: "Pirate Skies", image: "https://images.unsplash.com/photo-1519074063912-ad2a602159d7?q=80&w=600&auto=format&fit=crop" },
+  { id: 4, title: "Pirate Skies", image: "/assets/pirate.png" },
 ];
 
 export default function Hero() {
@@ -40,7 +39,7 @@ export default function Hero() {
         </motion.div>
 
         {/* Scrolling Carousel */}
-        <div className="relative w-screen left-1/2 -ml-[50vw] overflow-hidden group">
+        <div className="relative w-screen left-1/2 -ml-[50vw] overflow-hidden">
           <motion.div 
             className="flex gap-6 w-max px-8 py-4"
             animate={{
