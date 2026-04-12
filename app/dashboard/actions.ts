@@ -1,8 +1,6 @@
 "use server";
 
 import { createClient } from "@/utils/supabase/server";
-import { db } from "@/db";
-import { images } from "@/db/schema";
 import { revalidatePath } from "next/cache";
 
 /**
@@ -40,25 +38,29 @@ export async function uploadHeroImageAction(formData: FormData, metadata: { shar
     return { success: false, error: `Upload failed: ${storageError.message}` };
   }
 
-  // 3. Database Registration
-  try {
-    await db.insert(images).values({
-      userId: user.id,
-      storagePath: storageData.path,
+  // 3. Database Registration (Supabase Client for RLS compliance)
+  const { error: dbError } = await supabase
+    .from("images")
+    .insert({
+      user_id: user.id,
+      storage_path: storageData.path,
       status: "pending",
-      metadata: metadata,
+      sharpness_score: metadata.sharpness,
+      face_confidence: metadata.confidence,
+      pose_ratio: metadata.poseRatio,
     });
 
-    revalidatePath("/dashboard");
-    return { 
-      success: true, 
-      path: storageData.path,
-      timestamp 
-    };
-  } catch (dbError) {
+  if (dbError) {
     console.error("Database Error:", dbError);
-    // Cleanup storage if DB fails? (Optional, but good practice)
+    // Cleanup storage if DB fails
     await supabase.storage.from("user-uploads").remove([filePath]);
-    return { success: false, error: "Failed to register image in database" };
+    return { success: false, error: dbError.message || "Failed to register image in database" };
   }
+
+  revalidatePath("/dashboard");
+  return { 
+    success: true, 
+    path: storageData.path,
+    timestamp 
+  };
 }

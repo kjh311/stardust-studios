@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, varchar, uuid, integer, pgEnum, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, varchar, uuid, integer, pgEnum, jsonb, doublePrecision } from "drizzle-orm/pg-core";
 
 // Enums
 export const movieStatusEnum = pgEnum("movie_status", ["processing", "completed", "failed"]);
@@ -9,7 +9,9 @@ export const images = pgTable("images", {
   userId: uuid("user_id").references(() => profiles.id).notNull(),
   storagePath: text("storage_path").notNull(),
   status: text("status").default("pending").notNull(),
-  metadata: jsonb("metadata").notNull(), // Stores: { sharpness, confidence, poseRatio }
+  sharpnessScore: doublePrecision("sharpness_score").notNull(),
+  faceConfidence: doublePrecision("face_confidence").notNull(),
+  poseRatio: doublePrecision("pose_ratio").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
