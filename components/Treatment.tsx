@@ -1,45 +1,34 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { Play } from "lucide-react";
 
 export default function Treatment() {
   return (
-    <section className="py-spacing-section px-4 md:px-8 max-w-[1400px] mx-auto overflow-hidden">
-      <div className="text-center mb-16 space-y-4">
-        <span className="text-secondary text-xs uppercase tracking-[0.3em] font-manrope font-bold">The Creative Process</span>
-        <h2 className="text-4xl md:text-6xl font-epilogue font-bold">The Stardust Treatment</h2>
-      </div>
-
-      <div className="relative flex flex-col items-center">
-        {/* Large Ambient Glow */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] ambient-glow-primary pointer-events-none opacity-10" />
-
-        <motion.div
+    <section className="py-40 px-8 bg-surface-container-low">
+      <div className="max-w-5xl mx-auto">
+        <div className="mb-12 text-center">
+          <span className="font-manrope uppercase tracking-widest text-secondary font-bold text-sm">Experience the Magic</span>
+          <h2 className="font-headline text-4xl md:text-5xl mt-4">The Stardust Treatment</h2>
+        </div>
+        
+        <motion.div 
           initial={{ opacity: 0, scale: 0.95 }}
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
-          transition={{ duration: 1.2 }}
-          className="relative w-full max-w-4xl aspect-video rounded-md overflow-hidden glass-sheen"
+          transition={{ duration: 1 }}
+          className="relative aspect-video rounded-lg overflow-hidden border-[12px] border-surface-variant/40 backdrop-blur-md cinematic-glow group"
         >
           <img 
+            className="w-full h-full object-cover" 
             src="/assets/profile.png" 
-            alt="Pixar Style Character" 
-            className="w-full h-full object-cover"
+            alt="The Stardust Treatment Preview"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-surface to-transparent opacity-60" />
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8, delay: 0.4 }}
-          className="relative -mt-16 md:-mt-24 z-20 glass p-8 md:p-12 max-w-2xl rounded-md text-center space-y-6"
-        >
-          <p className="text-lg md:text-xl text-on-surface leading-relaxed font-manrope">
-            Our proprietary "Celestial Narrative" engine transforms your child&apos;s wildest ideas into high-fidelity animated classics. Every frame is treated with cinematic lighting, depth, and soul.
-          </p>
-          <div className="w-16 h-1 bg-primary mx-auto" />
+          <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/10 transition-colors cursor-pointer">
+            <div className="w-24 h-24 bg-primary rounded-full flex items-center justify-center shadow-2xl transform group-hover:scale-110 transition-transform">
+              <Play className="text-on-primary w-12 h-12 fill-on-primary ml-1" />
+            </div>
+          </div>
         </motion.div>
       </div>
     </section>

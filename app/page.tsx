@@ -1,93 +1,74 @@
 import Hero from "@/components/Hero";
 import Treatment from "@/components/Treatment";
 import Adventure from "@/components/Adventure";
-import FeatureBar from "@/components/FeatureBar";
+import FeatureGrid from "@/components/FeatureGrid";
+import ScriptSection from "@/components/ScriptSection";
 import Testimonials from "@/components/Testimonials";
-import { Film } from "lucide-react";
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-surface">
-      {/* Navbar */}
-      <nav className="fixed top-0 w-full z-50 glass border-b border-white/5 px-4 md:px-8 py-4 flex justify-between items-center">
-        <div className="flex items-center gap-2">
-          <Film className="text-primary w-6 h-6" />
-          <span className="text-on-surface font-epilogue font-bold tracking-tight text-xl">Stardust Studios</span>
+    <main className="min-h-screen bg-surface selection:bg-primary/30">
+      {/* TopNavBar */}
+      <nav className="fixed top-0 w-full z-50 bg-transparent backdrop-blur-xl">
+        <div className="flex justify-between items-center px-8 py-6 max-w-screen-2xl mx-auto font-headline tracking-tight">
+          <div className="text-2xl font-bold tracking-tighter text-amber-200">Stardust Studios</div>
+          <div className="hidden md:flex gap-8">
+            <a className="text-slate-400 font-medium hover:text-slate-200 hover:scale-105 transition-transform duration-300" href="#">Trailers</a>
+            <a className="text-slate-400 font-medium hover:text-slate-200 hover:scale-105 transition-transform duration-300" href="#">Stories</a>
+            <a className="text-slate-400 font-medium hover:text-slate-200 hover:scale-105 transition-transform duration-300" href="#">Features</a>
+            <a className="text-slate-400 font-medium hover:text-slate-200 hover:scale-105 transition-transform duration-300" href="#">Social</a>
+          </div>
+          <button className="bg-primary text-on-primary px-6 py-2.5 rounded-lg font-bold hover:scale-95 duration-200 transition-transform">
+            Create Now
+          </button>
         </div>
-        <div className="hidden md:flex gap-8 text-xs uppercase tracking-widest font-manrope font-semibold text-on-surface/70">
-          <a href="#" className="hover:text-primary transition-colors">Stories</a>
-          <a href="#" className="hover:text-primary transition-colors">Pricing</a>
-          <a href="#" className="hover:text-primary transition-colors">About</a>
-        </div>
-        <button className="px-5 py-2 glass-sheen text-primary border border-primary/20 rounded-md text-xs uppercase tracking-widest font-bold">
-          Sign In
-        </button>
       </nav>
 
       {/* Hero Section */}
       <Hero />
 
-      {/* Feature Highlighting Bar */}
-      <FeatureBar />
-
-      {/* Character Profile Section */}
+      {/* Trailer/Treatment Section */}
       <Treatment />
 
-      {/* The Adventures Grid */}
+      {/* Adventures Section */}
       <Adventure />
 
-      {/* Personalization Banner - Simplified for assembly */}
-      <section className="py-24 px-4 md:px-8">
-        <div className="max-w-[1200px] mx-auto glass p-12 rounded-md flex flex-col md:flex-row items-center justify-between gap-12 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 ambient-glow-secondary opacity-20 -mr-32 -mt-32" />
-          <div className="space-y-6 max-w-xl text-center md:text-left">
-            <h2 className="text-4xl font-epilogue font-bold">Personalize the Script</h2>
-            <p className="text-on-surface-variant font-manrope leading-relaxed">
-              Input Your Child&apos;s Name, Favorite Colors, and Interests. Our AI crafts a unique narrative that puts them at the center of the action.
-            </p>
-            <div className="bg-white/5 border border-white/10 rounded-md p-1 flex items-center">
-              <input 
-                type="text" 
-                placeholder="Enter their imagination..." 
-                className="bg-transparent border-none outline-none flex-grow px-4 py-2 font-manrope text-on-surface"
-              />
-              <button className="bg-primary text-surface px-6 py-2 rounded-sm font-bold uppercase tracking-widest text-xs">
-                Draft Story
-              </button>
-            </div>
-          </div>
-          <div className="relative group">
-            <div className="absolute -inset-1 bg-gradient-to-r from-primary to-secondary rounded-full blur opacity-25 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
-            <img 
-              src="https://images.unsplash.com/photo-1595152772835-219674b2a8a6?q=80&w=200&auto=format&fit=crop" 
-              alt="Author" 
-              className="relative w-32 h-32 rounded-full object-cover border-2 border-primary/30"
-            />
-          </div>
-        </div>
-      </section>
+      {/* Why Section / Feature Grid */}
+      <FeatureGrid />
 
-      {/* Testimonials */}
+      {/* Personalization Section */}
+      <ScriptSection />
+
+      {/* Social Proof */}
       <Testimonials />
 
-      {/* Final CTA */}
-      <section className="py-spacing-section px-4 md:px-8 text-center relative overflow-hidden">
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full h-[400px] ambient-glow-primary pointer-events-none opacity-20" />
-        <div className="relative z-10 space-y-10">
-          <h2 className="text-5xl md:text-7xl font-epilogue font-bold tracking-tighter">Ready to see them on <br /> the Big Screen?</h2>
-          <button className="px-12 py-6 bg-primary text-surface font-manrope font-bold uppercase tracking-[0.2em] rounded-md hover:shadow-[0_0_30px_rgba(255,215,155,0.4)] transition-all">
-            Get Premier Access
+      {/* Final CTA Section */}
+      <section className="py-40 px-8 relative overflow-hidden">
+        <div className="absolute inset-0 z-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent"></div>
+        <div className="max-w-4xl mx-auto text-center relative z-10">
+          <h2 className="font-headline text-5xl md:text-7xl mb-8 leading-tight text-on-surface font-extrabold tracking-tighter">
+            Ready to see them on <br /> the Big Screen?
+          </h2>
+          <p className="text-on-surface-variant font-body text-xl mb-12 max-w-2xl mx-auto">
+            Join thousands of families who have turned bedtime stories into cinematic history.
+          </p>
+          <button className="bg-primary text-on-primary font-bold text-2xl px-16 py-8 rounded-full shadow-[0_0_30px_rgba(255,215,155,0.3)] hover:scale-105 transition-transform duration-300">
+            Get Started
           </button>
         </div>
       </section>
 
-      {/* Minimal Footer */}
-      <footer className="py-12 border-t border-white/5 px-4 md:px-8 flex flex-col md:flex-row justify-between items-center text-[10px] text-on-surface-variant uppercase tracking-widest">
-        <p>&copy; 2026 Stardust Studios. Built with T3-Neo Stack.</p>
-        <div className="flex gap-8 mt-4 md:mt-0">
-          <a href="#">Privacy</a>
-          <a href="#">Terms</a>
-          <a href="#">Cookies</a>
+      {/* Footer */}
+      <footer className="bg-slate-950 w-full py-20 px-8 border-t border-white/5">
+        <div className="flex flex-col md:flex-row justify-between items-center gap-8 max-w-screen-2xl mx-auto font-body text-sm leading-relaxed">
+          <div className="text-xl font-bold text-amber-200 font-headline">Stardust Studios</div>
+          <div className="flex flex-wrap justify-center gap-8">
+            <a className="text-slate-500 hover:text-amber-100 transition-colors" href="#">Privacy Policy</a>
+            <a className="text-slate-500 hover:text-amber-100 transition-colors" href="#">Terms of Service</a>
+            <a className="text-slate-500 hover:text-amber-100 transition-colors" href="#">Contact Support</a>
+            <a className="text-slate-500 hover:text-amber-100 transition-colors" href="#">AI Ethics</a>
+          </div>
+          <div className="text-slate-500">© 2026 Stardust Studios. Crafted for the Cinematic Universe.</div>
         </div>
       </footer>
     </main>
