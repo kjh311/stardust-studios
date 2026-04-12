@@ -12,6 +12,7 @@
     "@fal-ai/client": "^1.9.5",
     "@mux/mux-node": "^12.8.1",
     "@mux/mux-player-react": "^3.11.7",
+    "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.103.0",
     "drizzle-orm": "^0.45.2",
     "framer-motion": "^12.38.0",
