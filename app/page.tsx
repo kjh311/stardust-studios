@@ -2,7 +2,6 @@ import Hero from "@/components/Hero";
 import Treatment from "@/components/Treatment";
 import Adventure from "@/components/Adventure";
 import FeatureGrid from "@/components/FeatureGrid";
-import ScriptSection from "@/components/ScriptSection";
 import Testimonials from "@/components/Testimonials";
 
 export default function Home() {
@@ -28,8 +27,7 @@ export default function Home() {
         <FeatureGrid />
       </div>
 
-      {/* Personalization Section */}
-      <ScriptSection />
+
 
       {/* Social Proof */}
       <div id="social">
