@@ -5,6 +5,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 
+import { getURL } from "@/utils/supabase/getURL";
+
 export async function signIn(formData: FormData) {
   const supabase = await createClient();
 
@@ -34,7 +36,7 @@ export async function signUp(formData: FormData) {
     email,
     password,
     options: {
-      emailRedirectTo: `${(await headers()).get("origin")}/auth/callback`,
+      emailRedirectTo: `${getURL()}auth/callback`,
     },
   });
 
@@ -47,12 +49,11 @@ export async function signUp(formData: FormData) {
 
 export async function signInWithGoogle() {
   const supabase = await createClient();
-  const origin = (await headers()).get("origin");
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: `${origin}/auth/callback`,
+      redirectTo: `${getURL()}auth/callback`,
     },
   });
 
