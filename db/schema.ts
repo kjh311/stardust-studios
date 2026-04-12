@@ -1,9 +1,18 @@
-import { pgTable, text, timestamp, varchar, uuid, integer, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, varchar, uuid, integer, pgEnum, jsonb } from "drizzle-orm/pg-core";
 
 // Enums
 export const movieStatusEnum = pgEnum("movie_status", ["processing", "completed", "failed"]);
 
 // Tables
+export const images = pgTable("images", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").references(() => profiles.id).notNull(),
+  storagePath: text("storage_path").notNull(),
+  status: text("status").default("pending").notNull(),
+  metadata: jsonb("metadata").notNull(), // Stores: { sharpness, confidence, poseRatio }
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const stories = pgTable("stories", {
   id: uuid("id").primaryKey().defaultRandom(),
   title: varchar("title", { length: 255 }).notNull(),
