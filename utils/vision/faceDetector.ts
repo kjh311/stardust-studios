@@ -144,8 +144,13 @@ export async function validateHeroImage(file: File): Promise<ValidationResult> {
     };
   }
 
-  // 7. Image Processing (Square Crop, Resize, Compress)
-  const { file: processedFile, url: previewUrl } = await processHeroImage(imgElement, detection.detection.box);
+  // 7. Active Area Analysis (Sense true content boundaries, ignoring letterboxing/artifacts)
+  const activeArea = findActiveArea(ctx, canvas.width, canvas.height);
+  console.log(`[Vision Debug] Active Area: ${activeArea.width}x${activeArea.height} at (${activeArea.x}, ${activeArea.y})`);
+
+  // 8. Image Processing (Square Crop, Resize, Compress)
+  // Clamp to activeArea for artifact-free result
+  const { file: processedFile, url: previewUrl } = await processHeroImage(imgElement, detection.detection.box, activeArea);
   
   // Clean up original image URL
   URL.revokeObjectURL(imgElement.src);
@@ -184,9 +189,13 @@ function checkPose(landmarks: faceapi.FaceLandmarks68): { isFrontal: boolean, ra
 
 /**
  * Intelligent 1:1 Square Crop centering on the face area.
- * Shifts box to maintain 1:1 ratio if near image boundaries.
+ * Shifts box to maintain 1:1 ratio if near image boundaries (aware of Active Area).
  */
-async function processHeroImage(img: HTMLImageElement, faceBox: faceapi.Box): Promise<{ file: File, url: string }> {
+async function processHeroImage(
+  img: HTMLImageElement, 
+  faceBox: faceapi.Box, 
+  activeArea: { x: number, y: number, width: number, height: number }
+): Promise<{ file: File, url: string }> {
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Canvas context not available');
@@ -205,16 +214,21 @@ async function processHeroImage(img: HTMLImageElement, faceBox: faceapi.Box): Pr
   let cropW = baseSide;
   let cropH = baseSide;
 
-  // 3. Smart Shifting: If square exceeds image bounds, shift it while keeping it square
-  if (cropX < 0) cropX = 0;
-  if (cropY < 0) cropY = 0;
-  if (cropX + cropW > img.width) cropX = img.width - cropW;
-  if (cropY + cropH > img.height) cropY = img.height - cropH;
+  // 3. Smart Shifting: If square exceeds ACTIVE AREA bounds, shift it while keeping it square
+  // This ensures NO black artifacts/letterboxing pixels are included
+  if (cropX < activeArea.x) cropX = activeArea.x;
+  if (cropY < activeArea.y) cropY = activeArea.y;
+  if (cropX + cropW > activeArea.x + activeArea.width) cropX = (activeArea.x + activeArea.width) - cropW;
+  if (cropY + cropH > activeArea.y + activeArea.height) cropY = (activeArea.y + activeArea.height) - cropH;
 
-  // Final emergency clamping (if image is smaller than our square)
-  const finalSide = Math.min(cropW, cropH, img.width, img.height);
+  // Final emergency clamping (if active content is smaller than our square)
+  const finalSide = Math.min(cropW, cropH, activeArea.width, activeArea.height);
   cropW = finalSide;
   cropH = finalSide;
+
+  // Final safety clamp to active area
+  if (cropX < activeArea.x) cropX = activeArea.x;
+  if (cropY < activeArea.y) cropY = activeArea.y;
 
   // 4. Resolution downscaling (max dimension 1024px)
   const MAX_DIM = 1024;
@@ -240,11 +254,97 @@ async function processHeroImage(img: HTMLImageElement, faceBox: faceapi.Box): Pr
   const processedFile = new File([blob], 'processed-hero.jpg', { type: 'image/jpeg' });
   const previewUrl = URL.createObjectURL(blob);
 
-  console.log(`[Vision Debug] Cinematic Square: ${cropW.toFixed(0)}px (Bias: 60%) -> ${targetW}px | Size: ${(blob.size / 1024).toFixed(1)}KB`);
+  console.log(`[Vision Debug] Cinematic Square: ${cropW.toFixed(0)}px (Active Area Aware) -> ${targetW}px | Size: ${(blob.size / 1024).toFixed(1)}KB`);
 
   return { 
     file: processedFile, 
     url: previewUrl 
+  };
+}
+
+/**
+ * Detects the "active" visual content area of an image, ignoring black letterboxing or rectangular artifacts.
+ * Scans from edges to find the first significant non-black pixels.
+ */
+function findActiveArea(ctx: CanvasRenderingContext2D, width: number, height: number) {
+  const imageData = ctx.getImageData(0, 0, width, height);
+  const data = imageData.data;
+  const threshold = 30; // Min sum of RGB to be considered "non-black"
+
+  let top = 0;
+  let bottom = height - 1;
+  let left = 0;
+  let right = width - 1;
+
+  // Scan from Top
+  for (let y = 0; y < height; y++) {
+    let rowHasContent = false;
+    for (let x = 0; x < width; x++) {
+      const i = (y * width + x) * 4;
+      if (data[i] + data[i + 1] + data[i + 2] > threshold) {
+        rowHasContent = true;
+        break;
+      }
+    }
+    if (rowHasContent) {
+      top = y;
+      break;
+    }
+  }
+
+  // Scan from Bottom
+  for (let y = height - 1; y >= top; y--) {
+    let rowHasContent = false;
+    for (let x = 0; x < width; x++) {
+      const i = (y * width + x) * 4;
+      if (data[i] + data[i + 1] + data[i + 2] > threshold) {
+        rowHasContent = true;
+        break;
+      }
+    }
+    if (rowHasContent) {
+      bottom = y;
+      break;
+    }
+  }
+
+  // Scan from Left
+  for (let x = 0; x < width; x++) {
+    let colHasContent = false;
+    for (let y = top; y <= bottom; y++) {
+      const i = (y * width + x) * 4;
+      if (data[i] + data[i + 1] + data[i + 2] > threshold) {
+        colHasContent = true;
+        break;
+      }
+    }
+    if (colHasContent) {
+      left = x;
+      break;
+    }
+  }
+
+  // Scan from Right
+  for (let x = width - 1; x >= left; x--) {
+    let colHasContent = false;
+    for (let y = top; y <= bottom; y++) {
+      const i = (y * width + x) * 4;
+      if (data[i] + data[i + 1] + data[i + 2] > threshold) {
+        colHasContent = true;
+        break;
+      }
+    }
+    if (colHasContent) {
+      right = x;
+      break;
+    }
+  }
+
+  return {
+    x: left,
+    y: top,
+    width: right - left + 1,
+    height: bottom - top + 1
   };
 }
 
